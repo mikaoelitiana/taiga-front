@@ -9,6 +9,8 @@
 - Errors (not found, server error, permissions and blocked project) don't change the current url.
 - Attachments image slider
 - New admin area to edit the tag colors used in your project
+- Add a new permissions to allow add comments instead of use the existent modify permission for this purpose.
+- Ability to edit comments, view edition history and redesign comments module UI
 
 ### Misc
 - Lots of small and not so small bugfixes.
