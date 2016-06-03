@@ -54,6 +54,7 @@ class KanbanController extends mixOf(taiga.Controller, taiga.PageMixin, taiga.Fi
         "$tgRepo",
         "$tgConfirm",
         "$tgResources",
+        "tgResources",
         "$routeParams",
         "$q",
         "$tgLocation",
@@ -62,13 +63,17 @@ class KanbanController extends mixOf(taiga.Controller, taiga.PageMixin, taiga.Fi
         "$tgEvents",
         "$tgAnalytics",
         "$translate",
-        "tgErrorHandlingService"
+        "tgErrorHandlingService",
+        "$tgModel",
+        "tgKanbanUserstories"
     ]
 
-    constructor: (@scope, @rootscope, @repo, @confirm, @rs, @params, @q, @location,
-                  @appMetaService, @navUrls, @events, @analytics, @translate, @errorHandlingService) ->
+    constructor: (@scope, @rootscope, @repo, @confirm, @rs, @rs2, @params, @q, @location,
+                  @appMetaService, @navUrls, @events, @analytics, @translate, @errorHandlingService,
+                  @model, @kanbanUserstoriesService) ->
 
         bindMethods(@)
+        @.zoom = 0
 
         @scope.sectionName = @translate.instant("KANBAN.SECTION_NAME")
         @scope.statusViewModes = {}
@@ -88,80 +93,79 @@ class KanbanController extends mixOf(taiga.Controller, taiga.PageMixin, taiga.Fi
         # On Error
         promise.then null, @.onInitialDataError.bind(@)
 
+        taiga.defineImmutableProperty @.scope, "usByStatus", () =>
+            return @kanbanUserstoriesService.usByStatus
+
     initializeEventHandlers: ->
-        @scope.$on "usform:new:success", =>
-            @.loadUserstories()
-            @.refreshTagsColors()
+        @scope.$on "usform:new:success", (event, us) =>
+            @.refreshTagsColors().then () =>
+                @.kanbanUserstoriesService.add(us)
+
             @analytics.trackEvent("userstory", "create", "create userstory on kanban", 1)
 
-        @scope.$on "usform:bulk:success", =>
-            @.loadUserstories()
+        @scope.$on "usform:bulk:success", (event, uss) =>
+            @.refreshTagsColors().then () =>
+                @.kanbanUserstoriesService.add(uss)
+
             @analytics.trackEvent("userstory", "create", "bulk create userstory on kanban", 1)
 
-        @scope.$on "usform:edit:success", =>
-            @.loadUserstories()
-            @.refreshTagsColors()
+        @scope.$on "usform:edit:success", (event, us) =>
+            @.refreshTagsColors().then () =>
+                @.kanbanUserstoriesService.replaceModel(us)
 
         @scope.$on("assigned-to:added", @.onAssignedToChanged)
         @scope.$on("kanban:us:move", @.moveUs)
         @scope.$on("kanban:show-userstories-for-status", @.loadUserStoriesForStatus)
         @scope.$on("kanban:hide-userstories-for-status", @.hideUserStoriesForStatus)
 
-    # Template actions
-
     addNewUs: (type, statusId) ->
         switch type
             when "standard" then @rootscope.$broadcast("usform:new", @scope.projectId, statusId, @scope.usStatusList)
             when "bulk" then @rootscope.$broadcast("usform:bulk", @scope.projectId, statusId)
 
-    changeUsAssignedTo: (us) ->
+    editUs: (id) ->
+        us = @.kanbanUserstoriesService.getUs(id)
+        us = us.set('loading', true)
+        @.kanbanUserstoriesService.replace(us)
+
+        @rs.userstories.getByRef(us.getIn(['model', 'project']), us.getIn(['model', 'ref']))
+         .then (editingUserStory) =>
+            @rs2.attachments.list("us", us.get('id'), us.getIn(['model', 'project'])).then (attachments) =>
+                @rootscope.$broadcast("usform:edit", editingUserStory, attachments.toJS())
+
+                us = us.set('loading', false)
+                @.kanbanUserstoriesService.replace(us)
+
+    changeUsAssignedTo: (id) ->
+        us = @.kanbanUserstoriesService.getUsModel(id)
+
         @rootscope.$broadcast("assigned-to:add", us)
 
     # Scope Events Handlers
 
-    onAssignedToChanged: (ctx, userid, us) ->
-        us.assigned_to = userid
+    onAssignedToChanged: (ctx, userid, usModel) ->
+        usModel.assigned_to = userid
 
-        promise = @repo.save(us)
+        @.kanbanUserstoriesService.replaceModel(usModel)
+
+        promise = @repo.save(usModel)
         promise.then null, ->
             console.log "FAIL" # TODO
 
-    # Load data methods
     refreshTagsColors: ->
         return @rs.projects.tagsColors(@scope.projectId).then (tags_colors) =>
             @scope.project.tags_colors = tags_colors
 
     loadUserstories: ->
         params = {
-            status__is_archived: false
+            status__is_archived: false,
+            include_attachments: true,
+            include_tasks: true
         }
 
         promise = @rs.userstories.listAll(@scope.projectId, params).then (userstories) =>
-            @scope.userstories = userstories
-
-            usByStatus = _.groupBy(userstories, "status")
-            us_archived = []
-            for status in @scope.usStatusList
-                if not usByStatus[status.id]?
-                    usByStatus[status.id] = []
-                if @scope.usByStatus?
-                    for us in @scope.usByStatus[status.id]
-                        if us.status != status.id
-                            us_archived.push(us)
-
-                # Must preserve the archived columns if loaded
-                if status.is_archived and @scope.usByStatus? and @scope.usByStatus[status.id].length != 0
-                    for us in @scope.usByStatus[status.id].concat(us_archived)
-                        if us.status == status.id
-                            usByStatus[status.id].push(us)
-
-                usByStatus[status.id] = _.sortBy(usByStatus[status.id], "kanban_order")
-
-            if userstories.length == 0
-                status = @scope.usStatusList[0]
-                usByStatus[status.id].push({isPlaceholder: true})
-
-            @scope.usByStatus = usByStatus
+            @.kanbanUserstoriesService.init(@scope.project, @scope.usersById)
+            @.kanbanUserstoriesService.set(userstories)
 
             # The broadcast must be executed when the DOM has been fully reloaded.
             # We can't assure when this exactly happens so we need a defer
@@ -255,31 +259,10 @@ class KanbanController extends mixOf(taiga.Controller, taiga.PageMixin, taiga.Fi
     prepareBulkUpdateData: (uses, field="kanban_order") ->
         return _.map(uses, (x) -> {"us_id": x.id, "order": x[field]})
 
-    resortUserStories: (uses) ->
-        items = []
-        for item, index in uses
-            item.kanban_order = index
-            if item.isModified()
-                items.push(item)
-
-        return items
-
     moveUs: (ctx, us, oldStatusId, newStatusId, index) ->
-        if oldStatusId != newStatusId
-            # Remove us from old status column
-            r = @scope.usByStatus[oldStatusId].indexOf(us)
-            @scope.usByStatus[oldStatusId].splice(r, 1)
+        us = @.kanbanUserstoriesService.getUsModel(us.get('id'))
 
-            # Add us to new status column.
-            @scope.usByStatus[newStatusId].splice(index, 0, us)
-            us.status = newStatusId
-        else
-            r = @scope.usByStatus[newStatusId].indexOf(us)
-            @scope.usByStatus[newStatusId].splice(r, 1)
-            @scope.usByStatus[newStatusId].splice(index, 0, us)
-
-        itemsToSave = @.resortUserStories(@scope.usByStatus[newStatusId])
-        @scope.usByStatus[newStatusId] = _.sortBy(@scope.usByStatus[newStatusId], "kanban_order")
+        itemsToSave = @.kanbanUserstoriesService.move(us.id, newStatusId, index)
 
         # Persist the userstory
         promise = @repo.save(us)

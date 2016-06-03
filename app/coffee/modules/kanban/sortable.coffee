@@ -63,7 +63,7 @@ KanbanSortableDirective = ($repo, $rs, $rootscope) ->
                 copy: false,
                 mirrorContainer: tdom[0],
                 moves: (item) ->
-                    return $(item).hasClass('kanban-task')
+                    return $(item).is('tg-card')
             })
 
             drake.on 'drag', (item) ->
