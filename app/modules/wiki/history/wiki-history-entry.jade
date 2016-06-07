@@ -1,0 +1,16 @@
+.wiki-history-entry-inner
+    img.activity-avatar(
+        ng-src="{{singleActivity.user.photo}}"
+        ng-alt="{{singleActivity.user.name}}"
+    )
+    .activity-main
+        .activity-data
+            span.activity-creator {{singleActivity.user.name}}
+            span.activity-date {{singleActivity.created_at | momentFormat:'DD MMM YYYY HH:mm'}}
+        
+        .activity-diff(
+            ng-repeat="(key, diff) in singleActivity.values_diff"
+            tg-wiki-history-diff
+            diff='diff'
+        )
+        

@@ -1,0 +1,10 @@
+nav.history-tabs(ng-if="vm.activities")
+    span.history-tab.active(
+        translate="ACTIVITY.TITLE"
+    )
+    
+section.wiki-history(ng-if="vm.activities")
+    tg-wiki-history-entry.wiki-history-entry(
+        tg-repeat="activity in vm.activities"
+        activity="activity"
+    )

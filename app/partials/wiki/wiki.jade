@@ -1,10 +1,15 @@
 doctype html
 
-div.wrapper(ng-controller="WikiDetailController as ctrl",
-            ng-init="section='wiki'")
+div.wrapper(
+    ng-controller="WikiDetailController as ctrl"
+    ng-init="section='wiki'"
+)
     tg-project-menu
     sidebar.menu-secondary.extrabar(ng-if="linksVisible")
-        section.wiki-nav(tg-wiki-nav, ng-model="wikiLinks")
+        section.wiki-nav(
+            tg-wiki-nav
+            ng-model="wikiLinks"
+        )
     section.main.wiki
         header
             h1
@@ -12,7 +17,11 @@ div.wrapper(ng-controller="WikiDetailController as ctrl",
                 span.green(translate="PROJECT.SECTION.WIKI")
 
 
-        div.summary.wiki-summary(tg-wiki-summary, ng-model="wiki", ng-if="wiki.id")
+        div.summary.wiki-summary(
+            tg-wiki-summary
+            ng-model="wiki"
+            ng-if="wiki.id"
+        )
         h2.wiki-title(ng-bind='wikiTitle')
         section.wiki-content(
             tg-editable-wysiwyg,
@@ -26,6 +35,11 @@ div.wrapper(ng-controller="WikiDetailController as ctrl",
             type="wiki_page",
             project-id="projectId"
             edit-permission = "modify_wiki_page"
+        )
+        
+        tg-wiki-history(
+            ng-if="wiki.id"
+            wiki-id="wiki.id"
         )
 
         a.remove(
