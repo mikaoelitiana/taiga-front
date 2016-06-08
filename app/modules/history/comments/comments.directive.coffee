@@ -34,6 +34,8 @@ CommentsDirective = () ->
             onAddComment: "&",
             onEditComment: "&",
             loading: "<",
+            deleting: "<",
+            editing: "<",
             projectId: "="
         },
         templateUrl:"history/comments/comments.html",

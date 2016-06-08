@@ -42,8 +42,21 @@
     }
     .entry-text {
         margin-bottom: 0;
-        &.ellipsis {
-            @include ellipsis(95%);
+        &.ellipsed {
+            max-height: 3rem;
+            overflow: hidden;
+        }
+        &.blurry {
+            position: relative;
+            &:after {
+                background-image: linear-gradient(to top, $white, transparent);
+                content: '';
+                height: 100%;
+                left: 0;
+                position: absolute;
+                top: 0;
+                width: 100%;
+            }
         }
     }
 }

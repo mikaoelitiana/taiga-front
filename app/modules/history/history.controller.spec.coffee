@@ -144,8 +144,10 @@ describe "HistorySection", ->
 
         promise = mocks.tgResources.history.deleteComment.withArgs(type, objectId, commentId).promise().resolve()
 
+        historyCtrl.deleting = true
         historyCtrl.deleteComment(commentId).then () ->
             expect(historyCtrl._loadHistory).have.been.called
+            expect(historyCtrl.deleting).to.be.false
 
     it "edit comment", () ->
         historyCtrl = controller "HistorySection"
@@ -162,8 +164,10 @@ describe "HistorySection", ->
 
         promise = mocks.tgResources.history.editComment.withArgs(type, objectId, activityId, comment).promise().resolve()
 
+        historyCtrl.editing = true
         historyCtrl.editComment(commentId, comment).then () ->
             expect(historyCtrl._loadHistory).has.been.called
+            expect(historyCtrl.editing).to.be.false
 
     it "restore comment", () ->
         historyCtrl = controller "HistorySection"
@@ -179,8 +183,10 @@ describe "HistorySection", ->
 
         promise = mocks.tgResources.history.undeleteComment.withArgs(type, objectId, activityId).promise().resolve()
 
+        historyCtrl.editing = true
         historyCtrl.restoreDeletedComment(commentId).then () ->
             expect(historyCtrl._loadHistory).has.been.called
+            expect(historyCtrl.editing).to.be.false
 
     it "add comment", () ->
         historyCtrl = controller "HistorySection"

@@ -53,23 +53,28 @@ class HistorySectionController
         type = @.name
         objectId = @.id
         activityId = commentId
-
+        @.deleting = true
         return @rs.history.deleteComment(type, objectId, activityId).then =>
             @._loadHistory()
+            @.deleting = false
 
     editComment: (commentId, comment) ->
         type = @.name
         objectId = @.id
         activityId = commentId
+        @.editing = true
         return @rs.history.editComment(type, objectId, activityId, comment).then =>
             @._loadHistory()
+            @.editing = false
 
     restoreDeletedComment: (commentId) ->
         type = @.name
         objectId = @.id
         activityId = commentId
+        @.editing = true
         return @rs.history.undeleteComment(type, objectId, activityId).then =>
             @._loadHistory()
+            @.editing = false
 
     addComment: () ->
         type = @.type

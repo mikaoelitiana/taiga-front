@@ -11,7 +11,9 @@
                 svg-icon="icon-arrow-down"
                 ng-class="{'inactive': !displayFullEntry}"
                 ng-click="displayFullEntry=!displayFullEntry"
+                ng-show="entry.comment.length >= 75"
             )
-        p.entry-text(
-            ng-class="{'ellipsis': !displayFullEntry}"
-        ) {{entry.comment}}
+        .entry-text(
+            ng-class="{'ellipsed': !displayFullEntry && entry.comment.length >= 75, 'blurry': entry.comment.length >= 75 && !displayFullEntry}"
+            ng-bind-html="entry.comment_html"
+        )

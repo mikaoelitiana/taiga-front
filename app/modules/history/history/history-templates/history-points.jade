@@ -1,7 +1,7 @@
-.diff-points-wrapper(ng-repeat="(key, diff) in activity.values_diff.points")
+.diff-points-wrapper(ng-repeat="(key, diff) in vm.diff")
     span.key(
         translate="ACTIVITY.US_POINTS"
-        translate-values="{role: key}"
+        translate-values="{role: vm.diff.key}"
     )
     span.diff {{diff[0]}}
     tg-svg.comment-option(

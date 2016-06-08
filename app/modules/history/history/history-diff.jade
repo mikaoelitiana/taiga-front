@@ -42,5 +42,20 @@
     ng-if="vm.type == 'custom_attributes'"
 )
     include history-templates/history-custom-attributes
+
+.diff-wrapper(
+    ng-if="vm.type == 'team_requirement'"
+)
+    include history-templates/team-requirement
+
+.diff-wrapper(
+    ng-if="vm.type == 'client_requirement'"
+)
+    include history-templates/client-requirement
+
+.diff-wrapper(
+    ng-if="vm.type == 'is_blocked'"
+)
+    include history-templates/blocked
     
     
