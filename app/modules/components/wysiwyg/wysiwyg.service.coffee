@@ -179,7 +179,6 @@ class WysiwygService
         matchRegexStr = String(Autolinker.matcher.Mention.prototype.matcherRegexes.twitter)
         if matchRegexStr.indexOf('.') == -1
             matchRegexStr = '@[^\s]{1,50}[^.\s]'
-            #Autolinker.matcher.Mention.prototype.matcherRegexes.twitter = new RegExp(matchRegexStr, 'g')      
 
         autolinker = new Autolinker({
             mention: 'twitter',

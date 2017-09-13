@@ -62,6 +62,7 @@ class EventsService
             path = _.trimStart(url, "/")
             url = "#{scheme}//#{loc.host}/#{path}"
 
+        @.error = false
         @.ws = new @win.WebSocket(url)
         @.ws.addEventListener("open", @.onOpen)
         @.ws.addEventListener("message", @.onMessage)
@@ -203,7 +204,6 @@ class EventsService
     ###########################################
     onOpen: ->
         @.connected = true
-        @.startHeartBeatMessages()
 
         @log.debug("WebSocket connection opened")
         token = @auth.getToken()
@@ -214,6 +214,7 @@ class EventsService
         }
 
         @.sendMessage(message)
+        @.startHeartBeatMessages()
         @.notifications()
 
     onMessage: (event) ->
